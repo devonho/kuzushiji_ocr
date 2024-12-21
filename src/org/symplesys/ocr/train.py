@@ -5,6 +5,7 @@ import numpy as np
 
 from tqdm import tqdm
 from org.symplesys.ocr.datasets import KMNISTImageDataset
+from org.symplesys.ocr.utils import createFolder
 
 import torch.nn as nn
 import torch.optim as optim
@@ -27,7 +28,9 @@ def train_model(model, criterion, optimizer, scheduler, device, source_folder, b
 
     since = time.time()
 
-    best_model_params_path = os.path.join("checkpoints", 'best_model_params.pt')
+    checkpoints_folder = "checkpoints"
+    createFolder(checkpoints_folder)
+    best_model_params_path = os.path.join(checkpoints_folder, 'best_model_params.pt')
 
     torch.save(model.state_dict(), best_model_params_path)
     best_acc = 0.0
@@ -59,7 +62,7 @@ def train_model(model, criterion, optimizer, scheduler, device, source_folder, b
                 # track history if only in train
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
-                    _, preds = torch.max(outputs, 1)
+                    #_, preds = torch.max(outputs, 1)
                     loss = criterion(outputs, labels)
 
                     # backward + optimize only if in training phase
@@ -69,7 +72,9 @@ def train_model(model, criterion, optimizer, scheduler, device, source_folder, b
 
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
+                #running_corrects += torch.sum(preds == labels.data)
+                running_corrects += labels.shape[0] - torch.sum((labels - outputs.tanh().relu()).relu())
+                pass
             if phase == 'train':
                 scheduler.step()
 
